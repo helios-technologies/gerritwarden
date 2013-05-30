@@ -1,0 +1,7 @@
+etc/*
+build/*
+*.pyc
+doc/build/*
+doc/source/api/*
+*.swp
+*.log
