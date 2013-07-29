@@ -1,0 +1,4 @@
+instance:
+    url: https://jira.helios.me/
+    login: user
+    password: password

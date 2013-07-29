@@ -1,0 +1,91 @@
+#!/usr/bin/python
+import sys
+import logging
+import os, os.path
+import signal
+import argparse
+import ConfigParser
+import yaml
+import json
+import time
+try:
+    import gerritwarden.warden
+    import gerritwarden.helpers
+except ImportError:
+    script_path = "%s/../" % (os.path.dirname(__file__))
+    sys.path.append(os.path.realpath(script_path))
+    import gerritwarden.warden
+    import gerritwarden.helpers
+
+
+def init_logger(debug=False):
+    '''Initialize logger with appenders and stuff'''
+    logger = logging.getLogger('gerritwarden')
+    logformat = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(logformat)
+    logger.setLevel(logging.INFO)
+    c_handler = logging.StreamHandler()
+    f_handler = logging.FileHandler('gerritwarden.log')
+    f_handler.setLevel(logging.INFO)
+    c_handler.setFormatter(formatter)
+    f_handler.setFormatter(formatter)
+    logger.addHandler(c_handler)
+    if debug:
+        logger.setLevel(logging.DEBUG)
+        c_handler.setLevel(logging.DEBUG)
+    logger.addHandler(f_handler)
+    return logger
+
+def do_args():
+    '''Parse arguments'''
+    descr = "Some description for gerrit warden goes here"
+    parser = argparse.ArgumentParser(description=descr)
+    parser.add_argument('-c', '--config', dest="config", required=False,
+                        default='/etc/gerritwarden.conf',
+                        help="Path to the config file")
+    parser.add_argument('-v', '--verbose', dest="verbose", action='store_true',
+                        help="Enable verbose output")
+    return parser.parse_args()
+
+def process_config(configfile):
+    '''Process config file'''
+    config = ConfigParser.ConfigParser()
+    config.read([configfile, "/etc/gerritwarden.conf"])
+    return config
+
+def process_yaml_config(configfile):
+    cfo = open(configfile, 'r')
+    return yaml.load(cfo)
+
+
+if __name__ == '__main__':
+    args = do_args()
+    if args.verbose:
+        logger = init_logger(args.verbose)
+    else:
+        logger = init_logger()
+    logger.debug('Starting Gerrit Warden')
+    logger.debug('Processing configs')
+    def on_sigint(signum, frame):
+        logger.info("SIGINT detected - exiting")
+        sys.exit(0)
+    signal.signal(signal.SIGINT, on_sigint)
+    config = process_config(args.config)
+    jira_config = process_yaml_config(config.get('main', 'jiraconfig')).get('instance')
+    pre_p_config = process_yaml_config(config.get('main', 'projectconfig'))
+    project_config = gerritwarden.helpers.ProjectConfig(pre_p_config.get('projects'))
+    gerrit_config = {}
+    for k, v in config.items('gerrit'):
+        gerrit_config[k] = v
+    logger.debug('Processed jira config: %s' % json.dumps(jira_config, sort_keys=True, indent=4))
+    logger.debug('Processed project config: %s' % json.dumps(project_config.projects, sort_keys=True, indent=4))
+    logger.debug('Processed gerrit config: %s' % json.dumps(gerrit_config, sort_keys=True, indent=4))
+    logger.debug('Entering main loop')
+    warden = gerritwarden.warden.Warden(gerrit_config=gerrit_config,
+                                        jira_config=jira_config,
+                                        project_config=project_config)
+    warden.daemon = True
+    warden.start()
+    warden.join()
+
+# vim: ts=4 sts=4 sw=4 et

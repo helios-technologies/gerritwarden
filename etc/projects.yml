@@ -1,0 +1,27 @@
+---
+projects:
+  ALL:
+    branches:
+      master:
+    events:
+      patchset-created: 'In Progress'
+      change-merged: null
+      draft-published: null
+      change-abandoned: null
+      change-restored: null
+      change-merged: 'Ready for QA'
+      merge-failed: null
+      comment-added: null
+      ref-updated: null
+      reviewer-added: null
+  project-zero:
+    branches:
+      ALL:
+      patchset:
+
+  EXCEPT:
+    - project_one
+    - project_two
+
+# vim: sw=2 ts=2 sts=2 et
+
