@@ -90,7 +90,7 @@ class Warden(multiprocessing.Process):
     def _process_state(self, event_type, data):
         self.log.debug("Processing %s event" % event_type )
         change_id = data['change']['id']
-        commit_msg = self.gerrit.query(change_id, commit=True)['commitMessage']
+        commit_msg = self.gerrit.query(change_id, commit_msg=True)['commitMessage']
         issues = gerritwarden.jira_helper.get_jira_ids(commit_msg)
         reviewlink = data['change']['url']
         reviewfield = self.jira_reviewfield
