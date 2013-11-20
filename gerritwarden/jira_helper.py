@@ -41,8 +41,7 @@ class JiraWrapper:
         for trans in trans_available:
             if trans['to']['name'].lower() == name.lower():
                 return trans['id']
-            else:
-                return None
+        return None
 
     def transition(self, issue, state, comment, fields=None):
         '''Transition field with comment to specific state'''
@@ -67,6 +66,13 @@ class JiraWrapper:
     def add_review_link(self, issue, reviewfield, reviewlink):
         '''Add a review link to issue. The link is added as an external link
         and as a value to Code Review field'''
+        # Custom fields are starting with customfield_ prefix and a number
+        # so we'll make sure that id will be enough
+        try:
+            int(reviewfield)
+            reviewfield = "customfield_%s" % reviewfield
+        except ValueError:
+            str(reviewfield)
         c_fields = self.get_custom_fields(issue)
         s_issue = self.jira.issue(issue)
         try:
