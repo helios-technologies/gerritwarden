@@ -112,14 +112,14 @@ class Warden(multiprocessing.Process):
             project = data['change']['project']
             event = data['type']
             branch = data['change']['branch']
-            cblob_set = set(project_config.get(project))
+            cblob_set = (project_config.get(project))
             transition = project_config[project]['events'][event]
             test_branch = project_config[project]['branches'][branch]
         except KeyError:
             # The data we care about was not present
             cblob_set = set()
-            self.log.info('Potential actions for event: %s' % event)
-        for prj in cblob_set:
+        self.log.info('Potential actions for event: %s' % event)
+        if cblob_set:
             if data['type'] == 'comment-added':
                 self.comment_added(data)
             elif data['type'] == 'patchset-created':
